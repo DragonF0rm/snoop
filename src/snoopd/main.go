@@ -2,15 +2,16 @@ package main
 
 import (
 	"io"
-	"log"
 	"net"
 	"os"
+	http_proxy "snoopd/http-proxy"
+	"snoopd/log"
 )
 
 const SockAddr = "/tmp/snoopd.sock"
 
 func echoServer(c net.Conn) {
-	log.Printf("Client connected [%s]", c.RemoteAddr().Network())
+	//log.Printf("Client connected [%s]", c.RemoteAddr().Network())
 	io.Copy(c, c)
 	c.Close()
 }
@@ -19,6 +20,8 @@ func main() {
 	if err := os.RemoveAll(SockAddr); err != nil {
 		log.Fatal("Unable to remove SockAddr <" + SockAddr + ">:", err)
 	}
+
+	go http_proxy.ListenAndServe()
 
 	l, err := net.Listen("unix", SockAddr)
 	if err != nil {
