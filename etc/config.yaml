@@ -1,10 +1,10 @@
 snoopd:
+  http_port: 8080
+  https_port: 8443
+  tls_cert: "/etc/snoopd/snoopd.pem"
+  tls_key: "/etc/snoopd/snoopd.key"
   log:
     logger_tag: "snoopd"
     logger_file: "/var/log/snoopd.log"
     response_logger_tag: "snoopd_response"
     response_logger_file: "/var/log/snoopd_response.log"
-  http_proxy:
-    port: 8080
-  https_proxy:
-    port: 8443

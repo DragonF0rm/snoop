@@ -4,8 +4,8 @@ import (
 	"io"
 	"net"
 	"os"
-	http_proxy "snoopd/http-proxy"
 	"snoopd/log"
+	"snoopd/proxy"
 )
 
 const SockAddr = "/tmp/snoopd.sock"
@@ -21,7 +21,8 @@ func main() {
 		log.Fatal("Unable to remove SockAddr <" + SockAddr + ">:", err)
 	}
 
-	go http_proxy.ListenAndServe()
+	go proxy.ListenAndServe()
+	go proxy.LisetnAndServeTLS()
 
 	l, err := net.Listen("unix", SockAddr)
 	if err != nil {

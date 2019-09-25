@@ -1,4 +1,4 @@
-package http_proxy
+package proxy
 
 import (
 	"crypto/tls"
@@ -40,13 +40,18 @@ func handleTunneling(w http.ResponseWriter, r *http.Request) {
 	go func(wg *sync.WaitGroup) {
 		wg.Add(1)
 		defer wg.Done()
-		//log.Debug(wg)
-		io.Copy(dstConn, srcConn)
+		var buf []byte
+		dstConn.Read(buf)
+		log.Debug("<", string(buf))
+		srcConn.Write(buf)
 	}(&wg)
 	go func(wg *sync.WaitGroup) {
 		wg.Add(1)
 		defer wg.Done()
-		io.Copy(srcConn, dstConn)
+		var buf []byte
+		srcConn.Read(buf)
+		log.Debug(">",string(buf))
+		dstConn.Write(buf)
 	}(&wg)
 	wg.Wait()
 	srcConn.Close()
@@ -84,11 +89,27 @@ func handleHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func ListenAndServe() {
-	port := cfg.GetInt("snoopd.http_proxy.port")
+	port := cfg.GetInt("snoopd.http_port")
 	server := &http.Server{
 		Addr: ":" + strconv.Itoa(port),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			log.Debug("Got some request:", r.Method, r.RequestURI, r.Proto)
+			log.Debug("Got some request by HTTP:", r.Method, r.URL.String(), r.Proto)
+			handleHTTP(w, r)
+		}),
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)), // Disable HTTP/2.
+	}
+	err := server.ListenAndServe()
+	if err != nil {
+		log.Fatal("Unable to start HTTP proxy server on port")
+	}
+}
+
+func LisetnAndServeTLS() {
+	port := cfg.GetInt("snoopd.https_port")
+	server := &http.Server{
+		Addr: ":" + strconv.Itoa(port),
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Debug("Got some request by HTTPS:", r.Method, r.URL.String(), r.Proto)
 			if r.Method == http.MethodConnect {
 				handleTunneling(w, r)
 			} else {
@@ -97,7 +118,9 @@ func ListenAndServe() {
 		}),
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)), // Disable HTTP/2.
 	}
-	err := server.ListenAndServe()
+	certFile := cfg.GetString("snoopd.tls_cert")
+	keyFile := cfg.GetString("snoopd.tls_key")
+	err := server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil {
 		log.Fatal("Unable to start HTTP proxy server on port")
 	}
