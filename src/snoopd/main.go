@@ -4,6 +4,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"snoopd/cfg"
 	"snoopd/log"
 	"snoopd/proxy"
 )
@@ -17,12 +18,16 @@ func echoServer(c net.Conn) {
 }
 
 func main() {
+	serverName := cfg.GetString("snoopd.name")
+	serverVersion := cfg.GetString("snoopd.version")
+	log.Info("Starting", serverName, serverVersion)
+
+	go proxy.ListenAndServe()
+	go proxy.ListenAndServeTLS()
+
 	if err := os.RemoveAll(SockAddr); err != nil {
 		log.Fatal("Unable to remove SockAddr <" + SockAddr + ">:", err)
 	}
-
-	go proxy.ListenAndServe()
-	go proxy.LisetnAndServeTLS()
 
 	l, err := net.Listen("unix", SockAddr)
 	if err != nil {

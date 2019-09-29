@@ -1,91 +1,98 @@
 package proxy
-
 import (
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"snoopd/cfg"
 	"snoopd/log"
 	"strconv"
-	"sync"
 	"time"
 )
 
+type MirrorConn struct {
+	conn net.Conn
+	closed bool
+}
+
+func NewMirrorConn(conn net.Conn) (*MirrorConn, error) {
+	return &MirrorConn{
+		conn:   conn,
+		closed: false,
+	}, nil
+}
+
+func (mc *MirrorConn)Read(p []byte) (n int, err error) {
+	n, err = mc.conn.Read(p)
+	fmt.Println(string(p[:n]))
+	return n, err
+}
+
+func (mc *MirrorConn)Write(p []byte) (n int, err error) {
+	n, err = mc.conn.Write(p)
+	fmt.Println(string(p[:n]))
+	return n, err
+}
+
+func (mc *MirrorConn)Close()(err error) {
+	err = mc.conn.Close()
+	if !mc.closed {
+		//This method may being called multiple times for each MirrorConn
+		//but connSlot must be released only once
+		mc.closed = true
+	}
+	return
+}
 
 func handleTunneling(w http.ResponseWriter, r *http.Request) {
-	dstConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second) //TODO put timeout to config
+	fmt.Println("Entered handle tunneling")
+	dest_conn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
 	if err != nil {
-		//TODO log error
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
+	dest_mc, _ := NewMirrorConn(dest_conn)
 
+	fmt.Println("Responding on CONNECT")
 	w.WriteHeader(http.StatusOK)
+	fmt.Println("Responded on CONNECT")
 	hijacker, ok := w.(http.Hijacker)
 	if !ok {
-		//TODO log error
 		http.Error(w, "Hijacking not supported", http.StatusInternalServerError)
 		return
 	}
 
-	srcConn, _, err := hijacker.Hijack()
+	client_conn, _, err := hijacker.Hijack()
 	if err != nil {
-		//TODO log error
-		log.Debug("Error on Hijack:", err)
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 	}
+	client_mc, _ := NewMirrorConn(client_conn)
 
-	wg := sync.WaitGroup{}
-	go func(wg *sync.WaitGroup) {
-		wg.Add(1)
-		defer wg.Done()
-		var buf []byte
-		dstConn.Read(buf)
-		log.Debug("<", string(buf))
-		srcConn.Write(buf)
-	}(&wg)
-	go func(wg *sync.WaitGroup) {
-		wg.Add(1)
-		defer wg.Done()
-		var buf []byte
-		srcConn.Read(buf)
-		log.Debug(">",string(buf))
-		dstConn.Write(buf)
-	}(&wg)
-	wg.Wait()
-	srcConn.Close()
-	dstConn.Close()
+	go transfer(dest_mc, client_mc)
+	go transfer(client_conn, dest_conn)
 }
-
+func transfer(destination io.WriteCloser, source io.ReadCloser) {
+	defer destination.Close()
+	defer source.Close()
+	io.Copy(destination, source)
+}
 func handleHTTP(w http.ResponseWriter, req *http.Request) {
-	//TODO save request
-	log.Request(req)
-	//fmt.Println(req)
 	resp, err := http.DefaultTransport.RoundTrip(req)
-	//TODO log response
 	if err != nil {
-		//TODO log error
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
-
-	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			//TODO log error
-		}
-	}()
-
-	for headerName, headerValues := range resp.Header {
-		for _, val := range headerValues {
-			w.Header().Add(headerName, val)
-		}
-	}
+	defer resp.Body.Close()
+	copyHeader(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
-	_, err = io.Copy(w, resp.Body)
-	if err != nil {
-		//TODO log error
+	io.Copy(w, resp.Body)
+}
+func copyHeader(dst, src http.Header) {
+	for k, vv := range src {
+		for _, v := range vv {
+			dst.Add(k, v)
+		}
 	}
 }
 
@@ -94,35 +101,46 @@ func ListenAndServe() {
 	server := &http.Server{
 		Addr: ":" + strconv.Itoa(port),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			log.Debug("Got some request by HTTP:", r.Method, r.URL.String(), r.Proto)
+			log.Debug("Got some HTTP request")
 			handleHTTP(w, r)
 		}),
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)), // Disable HTTP/2.
+		// Disable HTTP/2.
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
+
+	log.Info("Starting listening for HTTP on port", port)
 	err := server.ListenAndServe()
 	if err != nil {
-		log.Fatal("Unable to start HTTP proxy server on port", err)
+		log.Fatal("Fatal error on HTTP listener:", err)
 	}
 }
 
-func LisetnAndServeTLS() {
+func ListenAndServeTLS() {
+	fmt.Println("Entered Listen and serve tls")
 	port := cfg.GetInt("snoopd.https_port")
+	fmt.Println("got port from config", port)
 	server := &http.Server{
 		Addr: ":" + strconv.Itoa(port),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			log.Debug("Got some request by HTTPS:", r.Method, r.URL.String(), r.Proto)
+			log.Debug("Got some HTTPS request")
 			if r.Method == http.MethodConnect {
 				handleTunneling(w, r)
 			} else {
 				handleHTTP(w, r)
 			}
 		}),
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)), // Disable HTTP/2.
+		// Disable HTTP/2.
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
+
 	certFile := cfg.GetString("snoopd.tls_cert")
 	keyFile := cfg.GetString("snoopd.tls_key")
+
+	log.Info("Starting listening for HTTPS on port", port)
+	fmt.Println("Starting listening")
 	err := server.ListenAndServeTLS(certFile, keyFile)
+	fmt.Println("Finished listening, err:", err)
 	if err != nil {
-		log.Fatal("Unable to start HTTP proxy server on port", err)
+		log.Fatal("Fatal error on HTTPS listener:", err)
 	}
 }
