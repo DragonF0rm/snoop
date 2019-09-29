@@ -46,7 +46,6 @@ func (mc *MirrorConn)Close()(err error) {
 }
 
 func handleTunneling(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Entered handle tunneling")
 	dest_conn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -54,9 +53,7 @@ func handleTunneling(w http.ResponseWriter, r *http.Request) {
 	}
 	dest_mc, _ := NewMirrorConn(dest_conn)
 
-	fmt.Println("Responding on CONNECT")
 	w.WriteHeader(http.StatusOK)
-	fmt.Println("Responded on CONNECT")
 	hijacker, ok := w.(http.Hijacker)
 	if !ok {
 		http.Error(w, "Hijacking not supported", http.StatusInternalServerError)
@@ -108,7 +105,7 @@ func ListenAndServe() {
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
-	log.Info("Starting listening for HTTP on port", port)
+	log.Info("Listening for HTTP on port", port)
 	err := server.ListenAndServe()
 	if err != nil {
 		log.Fatal("Fatal error on HTTP listener:", err)
@@ -116,9 +113,7 @@ func ListenAndServe() {
 }
 
 func ListenAndServeTLS() {
-	fmt.Println("Entered Listen and serve tls")
 	port := cfg.GetInt("snoopd.https_port")
-	fmt.Println("got port from config", port)
 	server := &http.Server{
 		Addr: ":" + strconv.Itoa(port),
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -136,10 +131,8 @@ func ListenAndServeTLS() {
 	certFile := cfg.GetString("snoopd.tls_cert")
 	keyFile := cfg.GetString("snoopd.tls_key")
 
-	log.Info("Starting listening for HTTPS on port", port)
-	fmt.Println("Starting listening")
+	log.Info("Listening for HTTPS on port", port)
 	err := server.ListenAndServeTLS(certFile, keyFile)
-	fmt.Println("Finished listening, err:", err)
 	if err != nil {
 		log.Fatal("Fatal error on HTTPS listener:", err)
 	}

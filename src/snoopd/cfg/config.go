@@ -15,6 +15,7 @@ func init() {
 }
 
 var (
+	GetBool = viper.GetBool
 	GetString = viper.GetString
 	GetInt = viper.GetInt
 )

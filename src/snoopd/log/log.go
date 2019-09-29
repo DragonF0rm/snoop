@@ -55,27 +55,43 @@ func Fatal(msg ...interface{}) {
 }
 
 func Error(msg ...interface{}) {
-	logger.Err(fmt.Sprint(errorLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+	if cfg.GetBool("snoopd.debug_mode") {
+		fmt.Print(fmt.Sprint(errorLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+	} else {
+		logger.Err(fmt.Sprint(errorLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+	}
 }
 
 func Warning(msg ...interface{}) {
-	logger.Warning(fmt.Sprint(warningLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+	if cfg.GetBool("snoopd.debug_mode") {
+		fmt.Print(fmt.Sprint(warningLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+	} else {
+		logger.Warning(fmt.Sprint(warningLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+	}
 }
 
 func Info(msg ...interface{}) {
-	logger.Info(fmt.Sprint(infoLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+	if cfg.GetBool("snoopd.debug_mode") {
+		fmt.Print(fmt.Sprint(infoLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+	} else {
+		logger.Info(fmt.Sprint(infoLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+	}
 }
 
 func Debug(msg ...interface{}) {
-	logger.Debug(fmt.Sprint(debugLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+	if !cfg.GetBool("snoopd.debug_mode") {
+		return
+	}
 	fmt.Print(debugLogPrefix, getLogCaller(), fmt.Sprintln(msg...))
 }
 
 func Response(code int, reqStr, reqId string)  {
+	//TODO remove
 	responseLogger.Info(fmt.Sprintln("[" + strconv.Itoa(code) +"]", reqStr, "<" + reqId + ">"))
 }
 
 func Request(req *http.Request) {
+	//TODO remove
 	fmt.Printf("%v %v %v\r\n", req.Method, req.URL, req.Proto)
 	for headerName, headerValues := range req.Header {
 		fmt.Printf("%s:%s\r\n", headerName, fmt.Sprint(strings.Join(headerValues,"")))

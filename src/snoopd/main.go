@@ -20,7 +20,13 @@ func echoServer(c net.Conn) {
 func main() {
 	serverName := cfg.GetString("snoopd.name")
 	serverVersion := cfg.GetString("snoopd.version")
-	log.Info("Starting", serverName, serverVersion)
+	var mode string
+	if cfg.GetBool("snoopd.debug_mode") {
+		mode = "in debug mode"
+	} else {
+		mode = "in production mode"
+	}
+	log.Info("Starting", serverName, serverVersion, mode)
 
 	go proxy.ListenAndServe()
 	go proxy.ListenAndServeTLS()

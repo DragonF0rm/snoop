@@ -1,6 +1,7 @@
 snoopd:
   name: "Snoopd"
   version: "v1.0"
+  debug_mode: true
   http_port: 8080
   https_port: 8081
   tls_cert: "/etc/snoopd/snoopd.pem"
