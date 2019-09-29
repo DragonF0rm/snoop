@@ -1,6 +1,6 @@
 snoopd:
   http_port: 8080
-  https_port: 8443
+  https_port: 8081
   tls_cert: "/etc/snoopd/snoopd.pem"
   tls_key: "/etc/snoopd/snoopd.key"
   log:

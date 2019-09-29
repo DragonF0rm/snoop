@@ -61,6 +61,7 @@ func handleTunneling(w http.ResponseWriter, r *http.Request) {
 func handleHTTP(w http.ResponseWriter, req *http.Request) {
 	//TODO save request
 	log.Request(req)
+	//fmt.Println(req)
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	//TODO log response
 	if err != nil {
@@ -100,7 +101,7 @@ func ListenAndServe() {
 	}
 	err := server.ListenAndServe()
 	if err != nil {
-		log.Fatal("Unable to start HTTP proxy server on port")
+		log.Fatal("Unable to start HTTP proxy server on port", err)
 	}
 }
 
@@ -122,6 +123,6 @@ func LisetnAndServeTLS() {
 	keyFile := cfg.GetString("snoopd.tls_key")
 	err := server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil {
-		log.Fatal("Unable to start HTTP proxy server on port")
+		log.Fatal("Unable to start HTTP proxy server on port", err)
 	}
 }

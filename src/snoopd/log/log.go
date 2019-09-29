@@ -1,7 +1,6 @@
 package log
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/fatih/color"
 	"log"
@@ -10,6 +9,7 @@ import (
 	"runtime"
 	"snoopd/cfg"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -78,12 +78,12 @@ func Response(code int, reqStr, reqId string)  {
 func Request(req *http.Request) {
 	fmt.Printf("%v %v %v\r\n", req.Method, req.URL, req.Proto)
 	for headerName, headerValues := range req.Header {
-		fmt.Printf("%s:%s\r\n", headerName, fmt.Sprint(headerValues))
+		fmt.Printf("%s:%s\r\n", headerName, fmt.Sprint(strings.Join(headerValues,"")))
 	}
-	fmt.Print("\r\n")
-	var body bytes.Buffer
-	body.ReadFrom(req.Body)
-	if body.Len() != 0 {
-		fmt.Printf("%s\r\n", body.String())
-	}
+	//fmt.Print("\r\n")
+	//var body bytes.Buffer
+	//body.ReadFrom(req.Body)
+	//if body.Len() != 0 {
+	//	fmt.Printf("%s\r\n", body.String())
+	//}
 }
