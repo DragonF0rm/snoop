@@ -86,8 +86,8 @@ func Debug(msg ...interface{}) {
 }
 
 func Response(code int, reqStr, reqId string)  {
-	//TODO remove
-	responseLogger.Info(fmt.Sprintln("[" + strconv.Itoa(code) +"]", reqStr, "<" + reqId + ">"))
+	fmt.Print(fmt.Sprintln("[" + strconv.Itoa(code) +"]", reqStr, "< " + reqId + " >"))
+	responseLogger.Info(fmt.Sprintln("[" + strconv.Itoa(code) +"]", reqStr, "< " + reqId + " >"))
 }
 
 func Request(req *http.Request) {

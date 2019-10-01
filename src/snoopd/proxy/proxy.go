@@ -1,4 +1,5 @@
 package proxy
+
 import (
 	"crypto/tls"
 	"io"
@@ -6,6 +7,7 @@ import (
 	"net/http"
 	"snoopd/cfg"
 	"snoopd/log"
+	"snoopd/storadge"
 	"strconv"
 	"time"
 )
@@ -40,10 +42,17 @@ func handleHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
+
+	err = storadge.Store(req, resp)
+	if err != nil {
+		log.Error("Unable to store round trip result, err:", err)
+	}
+
 	copyHeader(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
+
 func copyHeader(dst, src http.Header) {
 	for k, vv := range src {
 		for _, v := range vv {
@@ -87,11 +96,11 @@ func ListenAndServeTLS() {
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
-	certFile := cfg.GetString("snoopd.tls_cert")
-	keyFile := cfg.GetString("snoopd.tls_key")
+	//certFile := cfg.GetString("snoopd.tls_cert")
+	//keyFile := cfg.GetString("snoopd.tls_key")
 
 	log.Info("Listening for HTTPS on port", port)
-	err := server.ListenAndServeTLS(certFile, keyFile)
+	err := server.ListenAndServe()//TLS(certFile, keyFile)
 	if err != nil {
 		log.Fatal("Fatal error on HTTPS listener:", err)
 	}

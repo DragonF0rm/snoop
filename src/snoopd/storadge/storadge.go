@@ -1,21 +1,64 @@
 package storadge
 
-//func SaveRequest (req http.Request) {
-//	var request []string
-//	reqStr := fmt.Sprintf("%v %v %v", req.Method, req.URL, req.Proto)
-//	request = append(request, reqStr)
-//	for n, headers := range req.Header {
-//		for _, h := range headers {
-//			request = append(request, fmt.Sprintf(“%v: %v”, name, h))
-//		}
-//	}
-//
-//	// If this is a POST, add post data
-//	if r.Method == “POST” {
-//		r.ParseForm()
-//		request = append(request, “\n”)
-//		request = append(request, r.Form.Encode())
-//	}
-//	// Return the request as a string
-//	return strings.Join(request, “\n”)
-//}
+import (
+	"bufio"
+	"bytes"
+	"crypto/md5"
+	"encoding/base32"
+	"net/http"
+	"os"
+	"snoopd/cfg"
+	"snoopd/log"
+	"strconv"
+)
+
+var storingPath = cfg.GetString("snoopd.storing_path")
+func init() {
+	err := os.MkdirAll(storingPath, os.ModeDir | os.ModePerm)
+	if err != nil && err != os.ErrExist {
+		log.Fatal("Unable to create directory by storing path", err)
+	}
+	err = os.Chdir(storingPath)
+	if err != nil {
+		log.Fatal("Unable to change working directory to storing path, err:", err)
+	}
+}
+
+func Store(req *http.Request, resp *http.Response)(err error){
+	buf := bytes.NewBuffer(make([]byte, 0))
+	err = req.Write(buf)
+	if err != nil {
+		log.Error("Unable to write request to buffer, err:", err)
+		return
+	}
+
+	hash := md5.Sum(buf.Bytes())
+	strHash := base32.StdEncoding.EncodeToString(hash[:])
+	var requestLine []byte
+	requestLine, _, err = bufio.NewReader(buf).ReadLine()
+	if err != nil {
+		log.Error("Unable to read request line from buffer, err:", err)
+		return
+	}
+	log.Response(resp.StatusCode, string(requestLine), strHash)
+
+	fileName := strHash + strconv.Itoa(resp.StatusCode)
+	if _, err = os.Stat(fileName); os.IsNotExist(err) {
+		var file *os.File
+		file, err = os.Create(fileName)
+		if err != nil {
+			log.Error("Unable to create new storing file, err:", err)
+			return
+		}
+		defer file.Close()
+		_, err = file.Write(buf.Bytes())
+		if err != nil {
+			log.Error("Unable to write buffer to file, error:", err)
+			return
+		}
+	} else {
+		//Storing already exist (err = nil) or it is unexpected error
+		return
+	}
+	return nil
+}
