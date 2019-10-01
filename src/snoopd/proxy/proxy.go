@@ -1,7 +1,6 @@
 package proxy
 import (
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -11,47 +10,12 @@ import (
 	"time"
 )
 
-type MirrorConn struct {
-	conn net.Conn
-	closed bool
-}
-
-func NewMirrorConn(conn net.Conn) (*MirrorConn, error) {
-	return &MirrorConn{
-		conn:   conn,
-		closed: false,
-	}, nil
-}
-
-func (mc *MirrorConn)Read(p []byte) (n int, err error) {
-	n, err = mc.conn.Read(p)
-	fmt.Println(string(p[:n]))
-	return n, err
-}
-
-func (mc *MirrorConn)Write(p []byte) (n int, err error) {
-	n, err = mc.conn.Write(p)
-	fmt.Println(string(p[:n]))
-	return n, err
-}
-
-func (mc *MirrorConn)Close()(err error) {
-	err = mc.conn.Close()
-	if !mc.closed {
-		//This method may being called multiple times for each MirrorConn
-		//but connSlot must be released only once
-		mc.closed = true
-	}
-	return
-}
-
 func handleTunneling(w http.ResponseWriter, r *http.Request) {
-	dest_conn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
+	destConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
-	dest_mc, _ := NewMirrorConn(dest_conn)
 
 	w.WriteHeader(http.StatusOK)
 	hijacker, ok := w.(http.Hijacker)
@@ -60,20 +24,15 @@ func handleTunneling(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client_conn, _, err := hijacker.Hijack()
+	clientConn, _, err := hijacker.Hijack()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 	}
-	client_mc, _ := NewMirrorConn(client_conn)
 
-	go transfer(dest_mc, client_mc)
-	go transfer(client_conn, dest_conn)
+	t := newTunnel(clientConn, destConn)
+	t.HandleAndClose()
 }
-func transfer(destination io.WriteCloser, source io.ReadCloser) {
-	defer destination.Close()
-	defer source.Close()
-	io.Copy(destination, source)
-}
+
 func handleHTTP(w http.ResponseWriter, req *http.Request) {
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {
