@@ -11,4 +11,4 @@ snoopd:
     logger_tag: "snoopd"
     logger_file: "/var/log/snoopd.log"
     response_logger_tag: "snoopd_response"
-    response_logger_file: "/var/log/snoopd_response.log"
+    response_logger_file: "/var/log/snoopd_access.log"

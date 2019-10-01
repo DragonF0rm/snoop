@@ -40,7 +40,7 @@ func Store(req *http.Request, resp *http.Response)(err error){
 		log.Error("Unable to read request line from buffer, err:", err)
 		return
 	}
-	log.Response(resp.StatusCode, string(requestLine), strHash)
+	log.Access(resp.StatusCode, string(requestLine), strHash)
 
 	fileName := strHash + strconv.Itoa(resp.StatusCode)
 	if _, err = os.Stat(fileName); os.IsNotExist(err) {

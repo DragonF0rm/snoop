@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	logger 	       *syslog.Writer
-	responseLogger *syslog.Writer
+	logger       *syslog.Writer
+	accessLogger *syslog.Writer
 )
 
 func init() {
@@ -24,7 +24,7 @@ func init() {
 		log.Fatal("Unable to create new logger:", err)
 	}
 
-	responseLogger, err = syslog.New(syslog.LOG_INFO, cfg.GetString("snoopd.log.access_logger_tag"))
+	accessLogger, err = syslog.New(syslog.LOG_INFO, cfg.GetString("snoopd.log.access_logger_tag"))
 	if err != nil {
 		log.Fatal("Unable to create new access logger:", err)
 	}
@@ -50,31 +50,35 @@ func getLogCaller() string {
 func Fatal(msg ...interface{}) {
 	logCaller := getLogCaller()
 	msgStr := fmt.Sprintln(msg...)
-	logger.Err(fmt.Sprintln(fatalLogPrefix,logCaller, msgStr))
-	log.Fatal(errorLogColor.Sprint(fatalLogPrefix, logCaller, msgStr))
+	logLine := fmt.Sprintln(fatalLogPrefix,logCaller, msgStr)
+	logger.Err(logLine)
+	log.Fatal(logLine)
 }
 
 func Error(msg ...interface{}) {
+	logLine := fmt.Sprint(errorLogPrefix, getLogCaller(), fmt.Sprintln(msg...))
 	if cfg.GetBool("snoopd.debug_mode") {
-		fmt.Print(fmt.Sprint(errorLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+		fmt.Print(logLine)
 	} else {
-		logger.Err(fmt.Sprint(errorLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+		logger.Err(logLine)
 	}
 }
 
 func Warning(msg ...interface{}) {
+	logLine := fmt.Sprint(warningLogPrefix, getLogCaller(), fmt.Sprintln(msg...))
 	if cfg.GetBool("snoopd.debug_mode") {
-		fmt.Print(fmt.Sprint(warningLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+		fmt.Print(logLine)
 	} else {
-		logger.Warning(fmt.Sprint(warningLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+		logger.Warning(logLine)
 	}
 }
 
 func Info(msg ...interface{}) {
+	logLine := fmt.Sprint(infoLogPrefix, getLogCaller(), fmt.Sprintln(msg...))
 	if cfg.GetBool("snoopd.debug_mode") {
-		fmt.Print(fmt.Sprint(infoLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+		fmt.Print(logLine)
 	} else {
-		logger.Info(fmt.Sprint(infoLogPrefix, getLogCaller(), fmt.Sprintln(msg...)))
+		logger.Info(logLine)
 	}
 }
 
@@ -85,9 +89,12 @@ func Debug(msg ...interface{}) {
 	fmt.Print(debugLogPrefix, getLogCaller(), fmt.Sprintln(msg...))
 }
 
-func Response(code int, reqStr, reqId string)  {
-	fmt.Print(fmt.Sprintln("[" + strconv.Itoa(code) +"]", reqStr, "< " + reqId + " >"))
-	responseLogger.Info(fmt.Sprintln("[" + strconv.Itoa(code) +"]", reqStr, "< " + reqId + " >"))
+func Access(code int, reqStr, reqId string)  {
+	logLine := fmt.Sprintln("[" + strconv.Itoa(code) +"]", reqStr, "< " + reqId + " >")
+	if cfg.GetBool("snoopd.debug_mode") {
+		fmt.Print(logLine)
+	}
+	accessLogger.Info(logLine)
 }
 
 func Request(req *http.Request) {
