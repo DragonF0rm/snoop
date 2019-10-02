@@ -32,7 +32,7 @@ func NewGrpcApiService(accessLogPath string) GrpcApiService {
 }
 
 func (apiService *GrpcApiService)GetHistory(ctx context.Context, in *protobuf.Nothing)(*protobuf.History, error) {
-	cmd := exec.Command("tail", "-n", strconv.Itoa(historyLen), apiService.accessLogPath, "| sed", "'s/^.*]: //'")
+	cmd := exec.Command("./grep_access_log.sh", strconv.Itoa(historyLen))
 	output, err := cmd.Output()
 	if err != nil {
 		log.Error("Unable to grep access log, err:", err)
