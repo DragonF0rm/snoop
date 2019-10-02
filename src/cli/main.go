@@ -1,17 +1,43 @@
 package main
 
 import (
+	"fmt"
 	"google.golang.org/grpc"
+	"log"
+	"os"
+	"snoop/src/cli/handlers"
 	"snoop/src/shared/cfg"
+	"snoop/src/shared/protobuf"
 )
 
+const ( // API
+	history = "history"
+	resend = "resend"
+)
+
+var snoopd protobuf.SnoopdAPIClient
+
 func main() {
-	grpcConn, err := grpc.Dial(
-		cfg.GetString,
-		grpc.WithInsecure(),
-	)
+	snoopdAddr := cfg.GetString("cli.snoopd_ip") + ":" + cfg.GetString("snoopd.grpc_port")
+	grpcConn, err := grpc.Dial(snoopdAddr, grpc.WithInsecure())
 	if err != nil {
-		logger.Fatal("Can't connect to auth microservice via grpc")
+		log.Fatal("Unable to connect to snoopd on addr", snoopdAddr + ",", "err:", err)
 	}
-	userManager = services.NewUserMSClient(grpcConn)
+	defer grpcConn.Close()
+
+	snoopd = protobuf.NewSnoopdAPIClient(grpcConn)
+	if len(os.Args) < 2 {
+		fmt.Println("Error: to use snoop one must specify a command")
+		os.Exit(1)
+	}
+	args := os.Args[1:]
+
+	switch args[0] {
+	case history:
+		handlers.HandleHistory(snoopd)
+	case resend:
+	default:
+		fmt.Println("Error: invalid command")
+		os.Exit(1)
+	}
 }

@@ -5,7 +5,7 @@ package protobuf;
 message Nothing {}
 
 message History {
-    repeated string RoundTrip = 1;
+    repeated string RoundTrips = 1;
 }
 
 message ReqID {

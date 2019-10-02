@@ -17,7 +17,7 @@ import (
 	"strings"
 )
 
-const historyLen = 1000
+const historyLen = 20
 
 type GrpcApiService struct {
 	accessLogPath string
@@ -42,7 +42,7 @@ func (apiService *GrpcApiService)GetHistory(ctx context.Context, in *protobuf.No
 	var history protobuf.History
 	roundTripRecords := strings.Split(string(output), "\n")
 	for _, roundTripRecord := range roundTripRecords {
-		history.RoundTrip = append(history.RoundTrip, roundTripRecord)
+		history.RoundTrips = append(history.RoundTrips, roundTripRecord)
 	}
 	return &history, nil
 }
