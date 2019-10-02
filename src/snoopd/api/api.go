@@ -80,6 +80,7 @@ func (apiService *GrpcApiService)Resend(ctx context.Context, in *protobuf.ReqID)
 		log.Error("Unable to read request from buffer, err:", err)
 		return nil, err
 	}
+	req.Body.Close()
 
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {
