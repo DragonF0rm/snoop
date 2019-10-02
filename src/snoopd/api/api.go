@@ -82,7 +82,7 @@ func (apiService *GrpcApiService)Resend(ctx context.Context, in *protobuf.ReqID)
 	}
 	req.Body.Close()
 
-	resp, err := http.DefaultTransport.RoundTrip(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Error("Unable to get response for stored request, err:", err)
 		return nil, err
