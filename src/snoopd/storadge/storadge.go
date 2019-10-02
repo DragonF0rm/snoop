@@ -52,6 +52,13 @@ func Store(req *http.Request, resp *http.Response)(err error){
 			return
 		}
 		defer file.Close()
+
+		_, err = file.Write(requestLine)
+		if err != nil {
+			log.Error("Unable to write request line to file, err", err)
+			return
+		}
+
 		_, err = reqBuf.WriteTo(file)
 		if err != nil {
 			log.Error("Unable to write buffer to file, error:", err)
