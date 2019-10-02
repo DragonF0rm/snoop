@@ -91,15 +91,15 @@ func (apiService *GrpcApiService)Resend(ctx context.Context, in *protobuf.ReqID)
 		log.Error("Unable to get response for stored request, err:", err)
 		return nil, err
 	}
-	resp.Body.Close()
-
+	
 	respBuf := bytes.NewBuffer(make([]byte, 0))
 	err = resp.Write(respBuf)
 	if err != nil {
 		log.Error("Unable to write response into buffer, err:", err)
 		return nil, err
 	}
-
+	resp.Body.Close()
+	
 	var protoResponse protobuf.Response
 	protoResponse.Response = respBuf.String()
 	return &protoResponse, nil
