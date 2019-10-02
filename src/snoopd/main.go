@@ -1,21 +1,15 @@
 package main
 
 import (
-	"io"
+	"google.golang.org/grpc"
 	"net"
-	"os"
+	"snoopd/api"
 	"snoopd/cfg"
 	"snoopd/log"
+	"snoopd/protobuf"
 	"snoopd/proxy"
+	"strconv"
 )
-
-const SockAddr = "/tmp/snoopd.sock"
-
-func echoServer(c net.Conn) {
-	//log.Printf("Client connected [%s]", c.RemoteAddr().Network())
-	io.Copy(c, c)
-	c.Close()
-}
 
 func main() {
 	serverName := cfg.GetString("snoopd.name")
@@ -31,25 +25,19 @@ func main() {
 	go proxy.ListenAndServe()
 	go proxy.ListenAndServeTLS()
 
-	if err := os.RemoveAll(SockAddr); err != nil {
-		log.Fatal("Unable to remove SockAddr <" + SockAddr + ">:", err)
-	}
+	grpcPort := cfg.GetInt("snoopd.grpc_port")
+	apiService := api.NewGrpcApiService(cfg.GetString("snoopd.log.access_logger_file"))
+	grpcServer := grpc.NewServer()
+	protobuf.RegisterSnoopdAPIServer(grpcServer, &apiService)
 
-	l, err := net.Listen("unix", SockAddr)
+	listener, err := net.Listen("tcp", ":" + strconv.Itoa(grpcPort))
 	if err != nil {
-		log.Fatal("Unable to listen:", err)
+		log.Fatal("Unable to start listening for GRPC, err:", err)
 	}
-	defer l.Close()
+	log.Info("Listening for GRPC on port", grpcPort)
 
-	for {
-		// Accept new connections, dispatching them to echoServer
-		// in a goroutine.
-		conn, err := l.Accept()
-		if err != nil {
-			//TODO fixme
-			log.Fatal("accept error:", err)
-		}
-
-		go echoServer(conn)
+	err = grpcServer.Serve(listener)
+	if err != nil {
+		log.Fatal("Grpc server exited with error:", err)
 	}
 }

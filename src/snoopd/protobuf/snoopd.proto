@@ -1,0 +1,22 @@
+syntax = "proto3";
+// protoc --go_out=plugins=grpc:. *.proto
+package protobuf;
+
+message Nothing {}
+
+message History {
+    repeated string RoundTrip = 1;
+}
+
+message ReqID {
+    string ID = 1;
+}
+
+message Response {
+    string Response = 1;
+}
+
+service SnoopdAPI {
+    rpc GetHistory (Nothing) returns (History) {}
+    rpc Resend (ReqID) returns (Response) {}
+}

@@ -1,8 +1,10 @@
 snoopd:
   name: "Snoopd"
   version: "v1.0"
+  bin_file: "/usr/local/bin/snoopd"
   debug_mode: true
   storing_path: "/tmp/snoopd"
+  grpc_port: 8000
   http_port: 8080
   https_port: 8081
   tls_cert: "/etc/snoopd/snoopd.pem"
@@ -10,5 +12,10 @@ snoopd:
   log:
     logger_tag: "snoopd"
     logger_file: "/var/log/snoopd.log"
-    response_logger_tag: "snoopd_response"
-    response_logger_file: "/var/log/snoopd_access.log"
+    access_logger_tag: "snoopd_access"
+    access_logger_file: "/var/log/snoopd_access.log"
+cli:
+  name: "Snoop-Cli"
+  version: "v1.0"
+  bin_file: "/usr/local/bin/snoop"
+  snoopd_ip: "92.242.40.107"
