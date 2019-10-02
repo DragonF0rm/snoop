@@ -82,6 +82,10 @@ func (apiService *GrpcApiService)Resend(ctx context.Context, in *protobuf.ReqID)
 	}
 	req.Body.Close()
 
+	req.URL.Host = req.Host
+	req.URL.Scheme = strings.ToLower(strings.Split(req.Proto, "/")[0])
+	req.RequestURI = ""
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Error("Unable to get response for stored request, err:", err)
