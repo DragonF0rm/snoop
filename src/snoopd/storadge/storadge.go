@@ -53,8 +53,7 @@ func Store(req *http.Request, resp *http.Response)(err error){
 		}
 		defer file.Close()
 
-		lineEnd := byte('\n')
-		_, err = file.Write(append(requestLine, lineEnd))
+		_, err = file.Write(append(append(requestLine, byte('\r')), byte('\n')))
 		if err != nil {
 			log.Error("Unable to write request line to file, err", err)
 			return
