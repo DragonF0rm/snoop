@@ -68,14 +68,13 @@ func (apiService *GrpcApiService)Resend(ctx context.Context, in *protobuf.ReqID)
 		return nil, ErrNoStoredReqFound
 	}
 
-	reqFile, err := os.OpenFile(filepath.Join(storingPath, (*reqFileInfo).Name()), os.O_RDONLY, os.ModePerm)
+	reqBytes, err := ioutil.ReadFile(filepath.Join(storingPath, (*reqFileInfo).Name()))
 	if err != nil {
-		log.Error("Unable to open stored request file, err:", err)
+		log.Error("Unable to read request file, err:", err)
 		return nil, err
 	}
-	defer reqFile.Close()
 
-	reqBuf := bufio.NewReader(reqFile)
+	reqBuf := bufio.NewReader(bytes.NewBuffer(reqBytes))
 	req, err := http.ReadRequest(reqBuf)
 	if err != nil {
 		log.Error("Unable to read request from buffer, err:", err)
