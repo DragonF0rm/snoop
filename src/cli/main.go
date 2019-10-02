@@ -36,6 +36,11 @@ func main() {
 	case history:
 		handlers.HandleHistory(snoopd)
 	case resend:
+		if len(args) <= 1 {
+			fmt.Println("Error: request hash must be passed for resend function")
+			os.Exit(1)
+		}
+		handlers.HandleResend(snoopd, args[1])
 	default:
 		fmt.Println("Error: invalid command")
 		os.Exit(1)
