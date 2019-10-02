@@ -35,7 +35,8 @@ func Store(req *http.Request, resp *http.Response)(err error){
 	hash := md5.Sum(buf.Bytes())
 	strHash := base32.StdEncoding.EncodeToString(hash[:])
 	var requestLine []byte
-	requestLine, _, err = bufio.NewReader(buf).ReadLine()
+	reqBuf := bufio.NewReader(buf)
+	requestLine, _, err = reqBuf.ReadLine()
 	if err != nil {
 		log.Error("Unable to read request line from buffer, err:", err)
 		return
@@ -51,7 +52,7 @@ func Store(req *http.Request, resp *http.Response)(err error){
 			return
 		}
 		defer file.Close()
-		_, err = file.Write(buf.Bytes())
+		_, err = reqBuf.WriteTo(file)
 		if err != nil {
 			log.Error("Unable to write buffer to file, error:", err)
 			return

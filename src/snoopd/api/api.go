@@ -73,6 +73,7 @@ func (apiService *GrpcApiService)Resend(ctx context.Context, in *protobuf.ReqID)
 		log.Error("Unable to read request file, err:", err)
 		return nil, err
 	}
+	bytes.TrimSuffix(reqBytes, EOF)
 
 	reqBuf := bufio.NewReader(bytes.NewBuffer(reqBytes))
 	req, err := http.ReadRequest(reqBuf)
