@@ -10,9 +10,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"snoopd/cfg"
-	"snoopd/log"
-	"snoopd/protobuf"
+	"snoop/src/shared/cfg"
+	"snoop/src/shared/log"
+	"snoop/src/shared/protobuf"
 	"strconv"
 	"strings"
 )

@@ -5,9 +5,9 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"snoopd/cfg"
-	"snoopd/log"
-	"snoopd/storadge"
+	"snoop/src/shared/cfg"
+	"snoop/src/shared/log"
+	"snoop/src/snoopd/storadge"
 	"strconv"
 	"time"
 )

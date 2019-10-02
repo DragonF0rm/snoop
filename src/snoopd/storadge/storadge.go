@@ -7,8 +7,8 @@ import (
 	"encoding/base32"
 	"net/http"
 	"os"
-	"snoopd/cfg"
-	"snoopd/log"
+	"snoop/src/shared/cfg"
+	"snoop/src/shared/log"
 	"strconv"
 )
 

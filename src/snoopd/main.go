@@ -3,11 +3,11 @@ package main
 import (
 	"google.golang.org/grpc"
 	"net"
-	"snoopd/api"
-	"snoopd/cfg"
-	"snoopd/log"
-	"snoopd/protobuf"
-	"snoopd/proxy"
+	"snoop/src/shared/cfg"
+	"snoop/src/shared/log"
+	"snoop/src/shared/protobuf"
+	"snoop/src/snoopd/api"
+	"snoop/src/snoopd/proxy"
 	"strconv"
 )
 

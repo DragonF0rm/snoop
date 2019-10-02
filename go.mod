@@ -1,4 +1,4 @@
-module snoopd
+module snoop
 
 go 1.12
 

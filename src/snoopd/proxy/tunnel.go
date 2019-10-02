@@ -5,8 +5,8 @@ import (
 	"crypto/x509"
 	"io"
 	"net"
-	"snoopd/cfg"
-	"snoopd/log"
+	"snoop/src/shared/cfg"
+	"snoop/src/shared/log"
 	"sync"
 )
 

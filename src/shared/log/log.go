@@ -7,7 +7,7 @@ import (
 	"log/syslog"
 	"net/http"
 	"runtime"
-	"snoopd/cfg"
+	"snoop/src/shared/cfg"
 	"strconv"
 	"strings"
 )
